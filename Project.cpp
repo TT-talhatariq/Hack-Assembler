@@ -5,10 +5,11 @@
 #include<cstring>
 using namespace std;
 
+//Generating name for .hack extension
+string output_filename(string name);
 //For clearing all blank lines, Indentation and comments, Inline Comments
 void clear_comments_and_blankLines(string file_name);
 void clear_inline_comments_and_indentation(string file_name);
-
 
 //Function for conversion of decimal to binary
 string decimal_to_binary(int number);
@@ -21,36 +22,35 @@ string to_JMP(string ins);
 string to_D(string ins);
 string to_C(string ins);
 
-//For breakage of instruction into fields and then generating machine code
+//For breakage of instruction into fields and then generating machine code-
 string Cinstruction_to_MachineCode(string instruction);
 
 int main(){
-	
-	 //Will take the file name for user in runtime to save him from difficulty of writing manually
+	//Will take the file name for user in runtime to save him from difficulty of writing manually
 	string fname;
 	cout << "Input your file name with extension(keep care of lowerCase & UpperCase letters): ";	
 	cin >> fname;
 	
 	// Code for creating name of Output File with .hack Extension
-	string output_file;
-	size_t fo = fname.find('.');
-    if (fo != string::npos)
-		output_file = fname.substr(0, fo);
-	output_file += ".hack";	
-	
-	cout << "Assembly Code is in process of translation, please wait\n\n";
-	string var;
-	//First we will clear all blank lines, indentation, comments
-	clear_comments_and_blankLines(fname);
-	clear_inline_comments_and_indentation("temp.asm");
-      
-    //opening of file(user entered name)
-	ifstream ifile;
-	ifile.open("temp.asm");
-	if(!ifile.is_open())
-		cout << "File Does'nt Exist\n" << endl;
-	
+	string output_file = output_filename(fname);
+	//Checking if input file exists or not
+	ifstream file;
+	file.open(fname.c_str());
+	if(!file.is_open()){
+		cout << "File Does'nt Exist\n" << endl;	
+		return 0;
+		}
 	else{
+		file.close();
+		//cout << "Assembly Code is in process of translation, please wait\n\n";
+		string var;
+		//First we will clear all blank lines, indentation, comments
+		clear_comments_and_blankLines(fname);
+		clear_inline_comments_and_indentation("temp.asm");
+      
+    	//opening of file(user entered name)
+		ifstream ifile;
+		ifile.open("temp.asm");
 		//creating and opening of .hack file(for writing machine code) with same name as user entered
 		ofstream ofile;
 		ofile.open(output_file);
@@ -88,14 +88,21 @@ int main(){
 			}
 			    
 		}
-				
-			ofile.close();
+		//Closing files			
+		ifile.close();
+		ofile.close();
 	}
-	   cout << "Assembly Code Translated into Hack Machine Code\nCheck "<< output_file << " file in\
- your folder\nThanks your patience";
-	//Closing files			
-	ifile.close();
+	   cout << "\nAssembly Code Translated into Hack Machine Code\n\nCheck "<< output_file << " file in\
+ your folder\nThanks your Patience";
+	
 	return 0;
+}
+string output_filename(string name){
+	
+		//First break name from extension, and then add .hack extension with it
+	size_t fo = name.find('.');
+    if (fo != string::npos)
+		return name.substr(0, fo) + ".hack";
 }
 
 void clear_comments_and_blankLines(string file_name){
@@ -109,14 +116,11 @@ void clear_comments_and_blankLines(string file_name){
 	
 	string var;
 	while(!file1.eof()){
-		
 		getline(file1, var, '\n');
+	
 		//if there is comment then no need to write that line in temporary file		
-		if(var[0] == '/' || var == "")
-			continue;
-		
-		if(var == "\n") 
-			continue;
+		if(var[0] == '/' || var == "") continue;
+		if(var == "\n") 	continue;    //If new line, then no need to write
 		
 		else
 			file2 << var << endl;
@@ -143,7 +147,7 @@ void clear_inline_comments_and_indentation(string file_name){
 		if(ch == ' ' || ch == '\t')
 			continue;
 			
-			//if there is In_Line comment. ignore it till end line 
+		//if there is In_Line comment. ignore it till end line 
 		if( ch == '/'){
 			file1.ignore(100, '\n');
 			file2 << '\n';		
@@ -179,10 +183,10 @@ string decimal_to_binary(int number){
 string add_zero_to_bin(string binary){
 	string code = "";
 	
-	//Loop for adding 0'ros
-	for(int i=binary.length(); i<16; i++){
+	for(int i=binary.length(); i<16; i++){			//Loop for adding 0'ros
 		code += "0";
 	}
+	
 	code+=binary;
 	return code;
 }
@@ -257,6 +261,7 @@ string Cinstruction_to_MachineCode(string instruction){
 	
 	//I searched finding a character (=, ;) techiques from Google and found this buitlin method via a site
 	//names geeksforgeeks.here is the link: https://www.geeksforgeeks.org/string-find-in-cpp/
+	
 	size_t found = instruction.find('=');
     if (found != string::npos){
 		
@@ -264,7 +269,7 @@ string Cinstruction_to_MachineCode(string instruction){
 		//dest = comp instruction
 		left = instruction.substr(0, found);
     	right = instruction.substr(found+1, instruction.length());
-	}
+		}
 
 	else{
 		//comp = jump Instruction
@@ -272,23 +277,21 @@ string Cinstruction_to_MachineCode(string instruction){
 		left = instruction.substr(0, found);
     	right = instruction.substr(found+1, instruction.length());
 		jump = true;
-	}
-//	cout << left << " " << right << endl;	
+		}
+	//	cout << left << " " << right << endl;	
+	
 	//If instruction is dest = comp;
 	if(!jump){
-		
 		jmp = "000";
 		dest = to_D(left);	
 		comp = to_C(right);
-
-	}
+		}
 	//else instruction is comp;jump
 	else{
-	
 		dest = "000";
 		comp = to_C(left);
 		jmp = to_JMP(right);
-	}
+		}
 	
 	//Summing up all the parts
 	return "111"+comp+dest+jmp;
